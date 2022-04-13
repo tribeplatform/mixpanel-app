@@ -2,10 +2,7 @@ import { CREDENTIALS, LOG_FORMAT, NODE_ENV, ORIGIN, PORT } from '@config';
 import { connect, set } from 'mongoose';
 import { logger, stream } from '@utils/logger';
 
-import React from 'react';
 import { Routes } from '@interfaces/routes.interface';
-import { StaticRouter } from 'react-router-dom';
-import { StaticRouterContext } from 'react-router';
 import bodyParser from 'body-parser'
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
