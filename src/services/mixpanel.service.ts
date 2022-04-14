@@ -34,6 +34,23 @@ class MixpanelService {
       throw new HttpException(500, 'Can not send data to amplitude');
     }
   }
+  public async setUserProperties(payload) {
+    try {
+      const url = this.region.toUpperCase() === MIXPANEL_REGIONS.US ? 'https://api.mixpanel.com/engage' : 'https://api-eu.mixpanel.com/engage';
+      payload.token = this.token;
+      logger.info('Send user data to Mixpanel: ' + JSON.stringify(payload));
+      const result = await axios.get(url, {
+        params: {
+          verbose: 1,
+          data: JSON.stringify(payload),
+        },
+      });
+      return result.data;
+    } catch (error) {
+      logger.error(error);
+      throw new HttpException(500, 'Can not send data to amplitude');
+    }
+  }
 }
 
 export default MixpanelService;

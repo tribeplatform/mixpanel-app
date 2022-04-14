@@ -133,7 +133,15 @@ class WebhookController {
         },
       };
 
-      const result: any = client.track(event);
+      const userProperties = {
+        $distinct_id: actor?.id,
+        $set: {
+          ...this.createMemberProperties(data),
+        },
+      };
+
+      const result: any = await client.track(event);
+      await client.setUserProperties(userProperties);
 
       if (result?.status != 1) {
         logger.error('Cannot send data to Mixpanel: ', {
@@ -146,6 +154,9 @@ class WebhookController {
           data: result,
         };
       }
+      
+      
+      
       return {
         type: input.type,
         status: 'SUCCEEDED',
