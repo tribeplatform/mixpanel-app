@@ -221,6 +221,7 @@ class WebhookController {
         ...this.createMemberProperties({ actor: user }),
         $email: user?.email,
         $name: user?.name,
+        $last_seen: user?.lastSeen,
       },
     };
   }
