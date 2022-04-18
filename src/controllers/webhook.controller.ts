@@ -1,6 +1,8 @@
+import { CLIENT_ID, CLIENT_SECRET, GRAPHQL_URL } from '@config';
 import { NextFunction, Request, Response } from 'express';
 
 import MixpanelService from '@/services/mixpanel.service';
+import { TribeClient } from '@tribeplatform/gql-client';
 import { Types } from '@tribeplatform/gql-client';
 import { logger } from '@/utils/logger';
 
@@ -133,16 +135,7 @@ class WebhookController {
         },
       };
 
-      const userProperties = {
-        $distinct_id: actor?.id,
-        $set: {
-          ...this.createMemberProperties(data),
-        },
-      };
-
       const result: any = await client.track(event);
-      await client.setUserProperties(userProperties);
-
       if (result?.status != 1) {
         logger.error('Cannot send data to Mixpanel: ', {
           status: result.status,
@@ -154,9 +147,20 @@ class WebhookController {
           data: result,
         };
       }
-      
-      
-      
+      const networkId = data?.object?.networkId;
+      const memberId = data?.actor?.id;
+      if (networkId && memberId) {
+        try {
+          const userProperties = await this.getMemberProperties(networkId, memberId);
+          await client.setUserProperties(userProperties);
+        } catch (err) {
+          logger.error('Cannot send user to Mixpanel: ', {
+            networkId: result.status,
+            memberId: result.error,
+          });
+        }
+      }
+
       return {
         type: input.type,
         status: 'SUCCEEDED',
@@ -186,7 +190,7 @@ class WebhookController {
       'Is Reply': data.object.isReply,
       Count: data.object.count,
       'Post ID': data.object.postId,
-      Reaction: data.object.reaction,
+      Reaction: data.object?.reaction?.reaction,
       'Space ID': data.object.spaceId,
       'Member ID': data.object.memberId,
       'Inviter ID': data.object.inviterId,
@@ -194,12 +198,29 @@ class WebhookController {
       Hidden: data.object.hidden,
     };
   }
-  createMemberProperties(data): any {
+  private createMemberProperties(data): any {
     if (!data?.actor?.id) return {};
     return {
       'Member ID': data?.actor?.id,
       'Role Type': data?.actor?.roleType,
-      '$email': data?.actor?.email,
+      $email: data?.actor?.email,
+    };
+  }
+  private async getMemberProperties(networkId: string, memberId: string) {
+    const client = new TribeClient({
+      clientId: CLIENT_ID,
+      clientSecret: CLIENT_SECRET,
+      graphqlUrl: GRAPHQL_URL,
+    });
+    const accessToken = await client.generateToken({
+      networkId,
+    });
+    const user = await client.members.get(memberId, 'all', accessToken);
+    return {
+      $distinct_id: user.id,
+      $set: {
+        ...this.createMemberProperties({ actor: user }),
+      },
     };
   }
 }
