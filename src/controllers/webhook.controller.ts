@@ -199,6 +199,7 @@ class WebhookController {
     return {
       'Member ID': data?.actor?.id,
       'Role Type': data?.actor?.roleType,
+      '$email': data?.actor?.email,
     };
   }
 }
