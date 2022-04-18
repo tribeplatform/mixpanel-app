@@ -203,7 +203,6 @@ class WebhookController {
     return {
       'Member ID': data?.actor?.id,
       'Role Type': data?.actor?.roleType,
-      $email: data?.actor?.email,
     };
   }
   private async getMemberProperties(networkId: string, memberId: string) {
@@ -220,6 +219,8 @@ class WebhookController {
       $distinct_id: user.id,
       $set: {
         ...this.createMemberProperties({ actor: user }),
+        $email: user?.email,
+        $name: user?.name,
       },
     };
   }
