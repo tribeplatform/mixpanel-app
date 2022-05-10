@@ -13,7 +13,7 @@
     "lint:fix": "npm run lint -- --fix"
   },
   "dependencies": {
-    "@tribeplatform/gql-client": "^1.1.2",
+    "@tribeplatform/gql-client": "^1.5.0",
     "axios": "^0.26.1",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
