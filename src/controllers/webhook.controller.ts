@@ -2,7 +2,7 @@ import { CLIENT_ID, CLIENT_SECRET, GRAPHQL_URL } from '@config';
 import { NextFunction, Request, Response } from 'express';
 
 import MixpanelService from '@/services/mixpanel.service';
-import { TribeClient } from '@tribeplatform/gql-client';
+import { GlobalClient } from '@tribeplatform/gql-client';
 import { Types } from '@tribeplatform/gql-client';
 import { logger } from '@/utils/logger';
 
@@ -206,15 +206,13 @@ class WebhookController {
     };
   }
   private async getMemberProperties(networkId: string, memberId: string) {
-    const client = new TribeClient({
+    const globalClient = new GlobalClient({
       clientId: CLIENT_ID,
       clientSecret: CLIENT_SECRET,
       graphqlUrl: GRAPHQL_URL,
     });
-    const accessToken = await client.generateToken({
-      networkId,
-    });
-    const user = await client.members.get(memberId, 'all', accessToken);
+    const client = await globalClient.getTribeClient({ networkId });
+    const user = await client.members.get({ id: memberId }, 'all');
     return {
       $distinct_id: user.id,
       $set: {
