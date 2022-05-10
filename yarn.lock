@@ -695,7 +695,7 @@
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-1.1.2.tgz#ccb91445360179a04e7fe6aff78c00ffc1eeaf82"
   integrity sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==
 
-"@tribeplatform/gql-client@^1.1.2":
+"@tribeplatform/gql-client@^1.5.0":
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/@tribeplatform/gql-client/-/gql-client-1.5.2.tgz#190eb0c405e316f49e019c05b59578e47c62e8a1"
   integrity sha512-zMqTW9/1CNdrEyfTUULUGLMyu6t3GW+oTO1l/NnHK5g0wYD0GfazGl3yO8o/RfCIcUjSibNS0nVdydkWzCupww==
