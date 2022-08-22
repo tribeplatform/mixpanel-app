@@ -1,6 +1,7 @@
 import { HttpException } from '@exceptions/HttpException';
 import axios from 'axios';
-import { logger } from '@utils/logger';
+import { createLogger } from '@utils/logger';
+import { Logger } from '@tribeplatform/node-logger';
 
 export enum MIXPANEL_REGIONS {
   US = 'US',
@@ -8,12 +9,14 @@ export enum MIXPANEL_REGIONS {
 }
 
 class MixpanelService {
+  private readonly logger: Logger;
   private token = null;
   private region = '';
 
   constructor(token: string, region: string) {
     this.token = token;
     this.region = region;
+    this.logger = createLogger(MixpanelService.name);
   }
 
   public async track(event) {
@@ -21,7 +24,7 @@ class MixpanelService {
       const url = this.region.toUpperCase() === MIXPANEL_REGIONS.US ? 'https://api.mixpanel.com/track' : 'https://api-eu.mixpanel.com/track';
       if (!event.properties) event.properties = {};
       event.properties.token = this.token;
-      logger.info('Send data to Mixpanel: ' + JSON.stringify(event));
+      this.logger.log('Send data to Mixpanel: ' + JSON.stringify(event));
       const result = await axios.get(url, {
         params: {
           verbose: 1,
@@ -30,7 +33,7 @@ class MixpanelService {
       });
       return result.data;
     } catch (error) {
-      logger.error(error);
+      this.logger.error(error);
       throw new HttpException(500, 'Can not send data to amplitude');
     }
   }
@@ -38,7 +41,7 @@ class MixpanelService {
     try {
       const url = this.region.toUpperCase() === MIXPANEL_REGIONS.US ? 'https://api.mixpanel.com/engage' : 'https://api-eu.mixpanel.com/engage';
       payload.token = this.token;
-      logger.info('Send user data to Mixpanel: ' + JSON.stringify(payload));
+      this.logger.log('Send user data to Mixpanel: ' + JSON.stringify(payload));
       const result = await axios.get(url, {
         params: {
           verbose: 1,
@@ -47,7 +50,7 @@ class MixpanelService {
       });
       return result.data;
     } catch (error) {
-      logger.error(error);
+      this.logger.error(error);
       throw new HttpException(500, 'Can not send data to amplitude');
     }
   }
