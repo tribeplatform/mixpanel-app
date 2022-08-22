@@ -1,18 +1,22 @@
 import { CLIENT_ID, CLIENT_SECRET, GRAPHQL_URL } from '@config';
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 
 import MixpanelService from '@/services/mixpanel.service';
 import { GlobalClient } from '@tribeplatform/gql-client';
 import { Types } from '@tribeplatform/gql-client';
-import { logger } from '@/utils/logger';
-
+import { createLogger } from '@/utils/logger';
+import { Logger } from '@tribeplatform/node-logger';
 const DEFAULT_SETTINGS = {
   apiKey: null,
   region: 'us',
 };
 
 class WebhookController {
-  public index = async (req: Request, res: Response, next: NextFunction) => {
+  private readonly logger: Logger;
+  constructor() {
+    this.logger = createLogger(WebhookController.name);
+  }
+  public index = async (req: Request, res: Response) => {
     const input = req.body;
     try {
       if (input.data?.challenge) {
@@ -30,6 +34,8 @@ class WebhookController {
         data: {},
       };
 
+      this.logger.log(`Incoming webhook ${input}`);
+
       switch (input.type) {
         case 'GET_SETTINGS':
           result = await this.getSettings(input);
@@ -43,7 +49,7 @@ class WebhookController {
       }
       res.status(200).json(result);
     } catch (error) {
-      logger.error(error);
+      this.logger.error(error);
       return {
         type: input.type,
         status: 'FAILED',
@@ -137,7 +143,7 @@ class WebhookController {
 
       const result: any = await client.track(event);
       if (result?.status != 1) {
-        logger.error('Cannot send data to Mixpanel: ', {
+        this.logger.error('Cannot send data to Mixpanel: ', {
           status: result.status,
           error: result.error,
         });
@@ -154,7 +160,7 @@ class WebhookController {
           const userProperties = await this.getMemberProperties(networkId, memberId);
           await client.setUserProperties(userProperties);
         } catch (err) {
-          logger.error('Cannot send user to Mixpanel: ', {
+          this.logger.error('Cannot send user to Mixpanel: ', {
             networkId: result.status,
             memberId: result.error,
           });
