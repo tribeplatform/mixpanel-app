@@ -1,5 +1,5 @@
 # Build App
-FROM node:14.15.0-alpine as Builder
+FROM node:24.22.1-alpine as Builder
 WORKDIR /tribe/app
 
 COPY package.json yarn.lock ./
@@ -9,7 +9,7 @@ COPY . .
 
 RUN yarn build
 
-FROM node:14.15.0-alpine AS Runner
+FROM node:24.22.1-alpine AS Runner
 WORKDIR /tribe/app
 
 ENV NODE_ENV production
