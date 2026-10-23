@@ -13,4 +13,5 @@ export const {
   LOG_DIR,
   ORIGIN,
   LOGGER_PRETTY_PRINT,
+  BODY_SIZE_LIMIT,
 } = process.env;

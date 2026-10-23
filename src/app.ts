@@ -1,4 +1,4 @@
-import { CREDENTIALS, NODE_ENV, ORIGIN, PORT } from '@config';
+import { BODY_SIZE_LIMIT, CREDENTIALS, NODE_ENV, ORIGIN, PORT } from '@config';
 import { connect, set } from 'mongoose';
 import { logger } from '@utils/logger';
 
@@ -71,6 +71,8 @@ class App {
     this.app.use(express.static('public'));
     this.app.use(
       bodyParser.json({
+        // Bettermode webhooks can carry large post bodies; the 100kb default answered them with 413.
+        limit: BODY_SIZE_LIMIT || '2mb',
         verify: (req, res, buf) => {
           if (req.url.includes('/api/webhook')) req['rawBody'] = buf;
         },
