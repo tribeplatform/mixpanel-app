@@ -1,6 +1,14 @@
 import DDTrace from 'dd-trace';
 
-import { logger } from '@utils/logger';
+// Initialise the tracer before anything it instruments is loaded (winston for log injection,
+// express, http, mongodb). The logger is required lazily because importing it loads winston.
+let tracerLogger;
+const getLogger = () => {
+  if (!tracerLogger) {
+    tracerLogger = require('./logger').logger;
+  }
+  return tracerLogger;
+};
 
 /**
  * CAUTION: Not wrapping the tracer initialization in this
@@ -14,10 +22,10 @@ if (process.env.NODE_ENV !== 'test') {
     startupLogs: true,
     sampleRate: 1,
     logger: {
-      error: err => logger.error(err, { context: 'DDTracer' }),
-      warn: message => logger.warn(message, { context: 'DDTracer' }),
-      info: message => logger.log(message, { context: 'DDTracer' }),
-      debug: message => logger.debug(message, { context: 'DDTracer' }),
+      error: err => getLogger().error(err, { context: 'DDTracer' }),
+      warn: message => getLogger().warn(message, { context: 'DDTracer' }),
+      info: message => getLogger().log(message, { context: 'DDTracer' }),
+      debug: message => getLogger().debug(message, { context: 'DDTracer' }),
     },
   });
   DDTrace.use('express', {
