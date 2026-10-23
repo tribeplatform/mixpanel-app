@@ -16,3 +16,13 @@ jest.config.js
 # docker
 Dockerfile
 docker-compose.yml
+
+# local state that must not reach the image or the build cache
+.git
+.env
+.env.*
+!.env.example
+dist
+coverage
+logs
+*.log
