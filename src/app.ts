@@ -58,7 +58,11 @@ class App {
     }
 
     if (dbConnection) {
-      connect(dbConnection.url, dbConnection.options);
+      // Nothing in the request path depends on MongoDB, so a failed connection is logged
+      // instead of left as an unhandled rejection (which exits the process on Node 15+).
+      connect(dbConnection.url, dbConnection.options).catch(error => {
+        logger.error(`MongoDB connection failed: ${error?.message}`, { context: 'Database' });
+      });
     }
   }
 
