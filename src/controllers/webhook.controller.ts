@@ -163,9 +163,13 @@ class WebhookController {
           const userProperties = await this.getMemberProperties(networkId, memberId);
           await client.setUserProperties(userProperties);
         } catch (err) {
-          this.logger.error('Cannot send user to Mixpanel: ', {
-            networkId: result.status,
-            memberId: result.error,
+          // The event itself was tracked, so the webhook still succeeds.
+          this.logger.error('Cannot send user to Mixpanel', {
+            networkId,
+            memberId,
+            error: err?.message,
+            status: err?.status ?? err?.response?.status,
+            code: err?.code ?? err?.response?.errors?.[0]?.code,
           });
         }
       }
@@ -221,14 +225,17 @@ class WebhookController {
       graphqlUrl: GRAPHQL_URL,
     });
     const client = await globalClient.getTribeClient({ networkId });
-    const user = await client.members.get({ id: memberId }, 'all');
+    // Only the fields used below. 'all' also asked for sessions, activeSession, score, custom fields
+    // and media, none of which are sent to Mixpanel.
+    const user = await client.members.get({ id: memberId }, { role: 'basic' });
     return {
       $distinct_id: user.id,
       $set: {
-        ...this.createMemberProperties({ actor: user }),
+        ...this.createMemberProperties({ actor: { id: user.id, roleType: user.role?.type } }),
         $email: user?.email,
         $name: user?.name,
-        $last_seen: user?.lastSeen,
+        // Member has lastSeenAt; lastSeen was always undefined.
+        $last_seen: user?.lastSeenAt,
       },
     };
   }
