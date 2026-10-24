@@ -50,11 +50,12 @@ class WebhookController {
       res.status(200).json(result);
     } catch (error) {
       this.logger.error(error);
-      return {
-        type: input.type,
+      // Answer instead of returning from the handler, which left the request open until Bettermode timed out.
+      return res.status(200).json({
+        type: input?.type,
         status: 'FAILED',
         data: {},
-      };
+      });
     }
   };
 
