@@ -123,7 +123,9 @@ class WebhookController {
    * TODO: Elaborate on this function
    */
   private async handleSubscription(input) {
-    const networkSettings = input?.currentSettings.find(s => (s.context = Types.PermissionContext.NETWORK));
+    // Prefer the network-level settings. The old code assigned (s.context = NETWORK) instead of comparing,
+    // so it always took the first entry and overwrote its context; keep that entry as the fallback.
+    const networkSettings = input?.currentSettings?.find(s => s.context === Types.PermissionContext.NETWORK) ?? input?.currentSettings?.[0];
     const apiKey = networkSettings?.settings.apiKey;
     const region = networkSettings?.settings.region || 'us';
     const data = input?.data || {};
