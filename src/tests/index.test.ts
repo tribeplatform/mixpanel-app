@@ -23,6 +23,7 @@ jest.mock('@tribeplatform/gql-client', () => {
 import App from '@/app';
 import HealthRoute from '@routes/health.route';
 import IndexRoute from '@routes/index.route';
+import { Logger } from '@tribeplatform/node-logger';
 import MixpanelService from '@/services/mixpanel.service';
 import WebhookRoute from '@/routes/webhook.route';
 import request from 'supertest';
@@ -167,26 +168,22 @@ describe('MixpanelService', () => {
   });
 
   it('does not log the project token or member PII', async () => {
-    const writes: string[] = [];
-    const spy = jest.spyOn(process.stdout, 'write').mockImplementation((chunk: any) => {
-      writes.push(String(chunk));
-      return true;
-    });
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation((...args) => {
-      writes.push(args.join(' '));
-    });
+    // Spy on the Logger itself: winston writes to stdout asynchronously, so capturing stdout is flaky.
+    const logged: string[] = [];
+    const record = (...args) => {
+      logged.push(JSON.stringify(args));
+    };
+    const spies = ['log', 'error', 'warn', 'debug'].map(level => jest.spyOn(Logger.prototype, level as any).mockImplementation(record));
     mockAxiosGet.mockResolvedValue({ data: { status: 1 } });
     const client = new MixpanelService('secret-project-token', 'eu');
 
     await client.track({ event: 'Post published', properties: { distinct_id: 'member-1' } });
     await client.setUserProperties({ $distinct_id: 'member-1', $set: { $email: 'jane@example.com', $name: 'Jane' } });
-    spy.mockRestore();
-    consoleSpy.mockRestore();
+    spies.forEach(spy => spy.mockRestore());
 
     expect(mockAxiosGet.mock.calls[0][0]).toBe('https://api-eu.mixpanel.com/track');
-    const logged = writes.join('\n');
-    expect(logged).toContain('Send data to Mixpanel');
-    expect(logged).not.toContain('secret-project-token');
-    expect(logged).not.toContain('jane@example.com');
+    expect(logged.join('\n')).toContain('Send data to Mixpanel');
+    expect(logged.join('\n')).not.toContain('secret-project-token');
+    expect(logged.join('\n')).not.toContain('jane@example.com');
   });
 });
