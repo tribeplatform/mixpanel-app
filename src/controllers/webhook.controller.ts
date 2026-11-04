@@ -1,8 +1,7 @@
-import { CLIENT_ID, CLIENT_SECRET, GRAPHQL_URL } from '@config';
 import { Request, Response } from 'express';
 
 import MixpanelService from '@/services/mixpanel.service';
-import { GlobalClient } from '@tribeplatform/gql-client';
+import { getTribeClient } from '@/utils/tribe_client';
 import { Types } from '@tribeplatform/gql-client';
 import { createLogger } from '@/utils/logger';
 import { Logger } from '@tribeplatform/node-logger';
@@ -219,12 +218,8 @@ class WebhookController {
     };
   }
   private async getMemberProperties(networkId: string, memberId: string) {
-    const globalClient = new GlobalClient({
-      clientId: CLIENT_ID,
-      clientSecret: CLIENT_SECRET,
-      graphqlUrl: GRAPHQL_URL,
-    });
-    const client = await globalClient.getTribeClient({ networkId });
+    // Cached per network: a new app token per webhook hit Bettermode's token rate limit during event bursts.
+    const client = await getTribeClient({ networkId });
     // Only the fields used below. 'all' also asked for sessions, activeSession, score, custom fields
     // and media, none of which are sent to Mixpanel.
     const user = await client.members.get({ id: memberId }, { role: 'basic' });
