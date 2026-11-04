@@ -14,4 +14,3 @@ export const verifySignature = (options: { signature: string; secret: string; bo
   const hash = getSignature({ secret, body, timestamp });
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(hash));
 };
-
