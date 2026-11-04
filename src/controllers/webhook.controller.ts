@@ -50,11 +50,12 @@ class WebhookController {
       res.status(200).json(result);
     } catch (error) {
       this.logger.error(error);
-      return {
-        type: input.type,
+      // Answer instead of returning from the handler, which left the request open until Bettermode timed out.
+      return res.status(200).json({
+        type: input?.type,
         status: 'FAILED',
         data: {},
-      };
+      });
     }
   };
 
@@ -122,7 +123,9 @@ class WebhookController {
    * TODO: Elaborate on this function
    */
   private async handleSubscription(input) {
-    const networkSettings = input?.currentSettings.find(s => (s.context = Types.PermissionContext.NETWORK));
+    // Prefer the network-level settings. The old code assigned (s.context = NETWORK) instead of comparing,
+    // so it always took the first entry and overwrote its context; keep that entry as the fallback.
+    const networkSettings = input?.currentSettings?.find(s => s.context === Types.PermissionContext.NETWORK) ?? input?.currentSettings?.[0];
     const apiKey = networkSettings?.settings.apiKey;
     const region = networkSettings?.settings.region || 'us';
     const data = input?.data || {};
@@ -160,9 +163,13 @@ class WebhookController {
           const userProperties = await this.getMemberProperties(networkId, memberId);
           await client.setUserProperties(userProperties);
         } catch (err) {
-          this.logger.error('Cannot send user to Mixpanel: ', {
-            networkId: result.status,
-            memberId: result.error,
+          // The event itself was tracked, so the webhook still succeeds.
+          this.logger.error('Cannot send user to Mixpanel', {
+            networkId,
+            memberId,
+            error: err?.message,
+            status: err?.status ?? err?.response?.status,
+            code: err?.code ?? err?.response?.errors?.[0]?.code,
           });
         }
       }
@@ -218,14 +225,17 @@ class WebhookController {
       graphqlUrl: GRAPHQL_URL,
     });
     const client = await globalClient.getTribeClient({ networkId });
-    const user = await client.members.get({ id: memberId }, 'all');
+    // Only the fields used below. 'all' also asked for sessions, activeSession, score, custom fields
+    // and media, none of which are sent to Mixpanel.
+    const user = await client.members.get({ id: memberId }, { role: 'basic' });
     return {
       $distinct_id: user.id,
       $set: {
-        ...this.createMemberProperties({ actor: user }),
+        ...this.createMemberProperties({ actor: { id: user.id, roleType: user.role?.type } }),
         $email: user?.email,
         $name: user?.name,
-        $last_seen: user?.lastSeen,
+        // Member has lastSeenAt; lastSeen was always undefined.
+        $last_seen: user?.lastSeenAt,
       },
     };
   }
